@@ -13,6 +13,8 @@ public class Product
    public decimal CostPrice { get; set; }
    public int VatRateId { get; set; }
    public VatRate VatRate { get; set; } = null!;
+   public Brand? Brand { get; set; }
+   public int? BrandId { get; set; }
 
    public float Weight { get; set; }
 
