@@ -1,26 +1,26 @@
 services:
-    postgres:
-        image: postgres:17
-        container_name: backoffice-postgres
-        restart: unless-stopped
-        environment:
-            POSTGRES_USER: backoffice
-            POSTGRES_PASSWORD: devpassword
-            POSTGRES_ID: backoffice
-            ports:
-                - "5432:5432"
-            volumes:
-                - postgres-data:/var/lib/postgresql/data
+  postgres:
+    image: postgres:17
+    container_name: backoffice-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: backoffice
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: backoffice
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
 
-        redis:
-            image: redis:8.10
-            container_name: backoffice-redis
-            restart: unless-stopped
-            ports:
-                - "6379:6379"
-            volumes:
-                - redis-data:/data
+  redis:
+    image: redis:8.10
+    container_name: backoffice-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
 
-        volumes:
-            postgres-data:
-            redis-data:
+volumes:
+  postgres-data:
+  redis-data:
