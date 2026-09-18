@@ -1,4 +1,5 @@
 using Backoffice.Api.Data;
+using Backoffice.Api.Dtos;
 using Backoffice.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,8 +19,16 @@ public class ProductsController : ControllerBase
    }
 
    [HttpGet]
-   public async Task<ActionResult<IEnumerable<Product>>> GetAllProducts()
+   public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAllProducts()
    {
-      return Ok(await _context.Products.ToListAsync());
+      var products = await _context.Products.Select(p => new ProductResponse
+      {
+         Id = p.Id,
+         Sku = p.Sku,
+         Name = p.Name,
+         Description = p.Description,
+         SalesPriceExcludingVat = p.SalesPriceExcludingVat
+      }).ToListAsync();
+      return Ok(products);
    }
 }
