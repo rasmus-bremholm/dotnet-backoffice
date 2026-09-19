@@ -32,6 +32,24 @@ public class ProductsController : ControllerBase
       return Ok(products);
    }
 
+   [HttpGet("{id}")]
+   public async Task<ActionResult<ProductResponse>> GetProductById(int id)
+   {
+      var product = await _context.Products.Where(p => p.Id == id).Select(p => new ProductResponse
+      {
+         Id = p.Id,
+         Sku = p.Sku,
+         Name = p.Name,
+         Description = p.Description,
+         SalesPriceExcludingVat = p.SalesPriceExcludingVat
+      }).FirstOrDefaultAsync();
+      if (product == null)
+      {
+         return NotFound();
+      }
+      return Ok(product);
+   }
+
    [HttpPost]
    public async Task<ActionResult<ProductResponse>> CreateProduct([FromBody] CreateProductRequest request)
    {
@@ -66,4 +84,6 @@ public class ProductsController : ControllerBase
 
       return Ok(response);
    }
+
+
 }
