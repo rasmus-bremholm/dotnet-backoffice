@@ -31,4 +31,39 @@ public class ProductsController : ControllerBase
       }).ToListAsync();
       return Ok(products);
    }
+
+   [HttpPost]
+   public async Task<ActionResult<ProductResponse>> CreateProduct([FromBody] CreateProductRequest request)
+   {
+      var product = new Product
+      {
+         Sku = request.Sku,
+         Name = request.Name,
+         Description = request.Description,
+         Shelf = request.Shelf,
+         CategoryId = request.CategoryId,
+         VatRateId = request.VatRateId,
+         BrandId = request.BrandId,
+         SalesPriceExcludingVat = request.SalesPriceExcludingVat,
+         CostPrice = request.CostPrice,
+         Weight = request.Weight,
+         Width = request.Width,
+         Length = request.Length,
+         Height = request.Height
+      };
+
+      _context.Products.Add(product);
+      await _context.SaveChangesAsync();
+
+      var response = new ProductResponse
+      {
+         Id = product.Id,
+         Sku = product.Sku,
+         Name = product.Name,
+         Description = product.Description,
+         SalesPriceExcludingVat = product.SalesPriceExcludingVat
+      };
+
+      return Ok(response);
+   }
 }
