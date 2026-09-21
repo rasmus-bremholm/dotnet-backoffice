@@ -2,6 +2,7 @@ using Backoffice.Api.Dtos;
 using Backoffice.Api.Models;
 using Backoffice.Api.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using StackExchange.Redis;
 
 
 namespace Backoffice.Api.Controllers;
@@ -12,10 +13,12 @@ namespace Backoffice.Api.Controllers;
 public class ProductsController : ControllerBase
 {
    private readonly IRepository<Product> _repository;
+   private readonly IConnectionMultiplexer _redis;
 
-   public ProductsController(IRepository<Product> repository)
+   public ProductsController(IRepository<Product> repository, IConnectionMultiplexer redis)
    {
       _repository = repository;
+      _redis = redis;
    }
 
    [HttpGet]
