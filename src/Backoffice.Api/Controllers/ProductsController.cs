@@ -107,4 +107,33 @@ public class ProductsController : ControllerBase
    }
 
 
+   [HttpPut("{id}")]
+   public async Task<IActionResult> UpdateProductById(int id, [FromBody] CreateProductRequest request)
+   {
+      var product = await _context.Products.FindAsync(id);
+
+      if (product == null)
+      {
+         return NotFound();
+      }
+
+      product.Sku = request.Sku;
+      product.Name = request.Name;
+      product.Description = request.Description;
+      product.Shelf = request.Shelf;
+      product.CategoryId = request.CategoryId;
+      product.VatRateId = request.VatRateId;
+      product.BrandId = request.BrandId;
+      product.SalesPriceExcludingVat = request.SalesPriceExcludingVat;
+      product.CostPrice = request.CostPrice;
+      product.Weight = request.Weight;
+      product.Width = request.Width;
+      product.Length = request.Length;
+      product.Height = request.Height;
+
+      await _context.SaveChangesAsync();
+      return NoContent();
+   }
+
+
 }
