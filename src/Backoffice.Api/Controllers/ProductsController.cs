@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Backoffice.Api.Dtos;
 using Backoffice.Api.Models;
 using Backoffice.Api.Repositories;
@@ -24,6 +25,15 @@ public class ProductsController : ControllerBase
    [HttpGet]
    public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAllProducts()
    {
+      var db = _redis.GetDatabase();
+      var cached = await db.StringGetAsync("products:all");
+
+      if (cached.HasValue)
+      {
+         var cachedResponse = JsonSerializer.Deserialize<List<ProductResponse>>(cached.ToString());
+         return Ok(cachedResponse);
+      }
+
       var products = await _repository.GetAllAsync();
       var response = products.Select(p => new ProductResponse
       {
@@ -32,7 +42,9 @@ public class ProductsController : ControllerBase
          Name = p.Name,
          Description = p.Description,
          SalesPriceExcludingVat = p.SalesPriceExcludingVat
-      });
+      }).ToList();
+
+      await db.StringSetAsync("products:all", JsonSerializer.Serialize(response), TimeSpan.FromMinutes(5));
 
       return Ok(response);
    }
@@ -82,6 +94,8 @@ public class ProductsController : ControllerBase
 
       await _repository.AddAsync(product);
       await _repository.SaveChangesAsync();
+      var db = _redis.GetDatabase();
+      await db.KeyDeleteAsync("products:all");
 
       var response = new ProductResponse
       {
@@ -108,6 +122,8 @@ public class ProductsController : ControllerBase
       {
          _repository.Delete(product);
          await _repository.SaveChangesAsync();
+         var db = _redis.GetDatabase();
+         await db.KeyDeleteAsync("products:all");
          return NoContent();
       }
       catch (Exception ex)
@@ -142,6 +158,8 @@ public class ProductsController : ControllerBase
       product.Height = request.Height;
 
       await _repository.SaveChangesAsync();
+      var db = _redis.GetDatabase();
+      await db.KeyDeleteAsync("products:all");
       return NoContent();
    }
 
