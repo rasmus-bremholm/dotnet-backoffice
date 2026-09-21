@@ -1,8 +1,8 @@
-using Backoffice.Api.Data;
 using Backoffice.Api.Dtos;
 using Backoffice.Api.Models;
+using Backoffice.Api.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+
 
 namespace Backoffice.Api.Controllers;
 
@@ -11,48 +11,55 @@ namespace Backoffice.Api.Controllers;
 
 public class ProductsController : ControllerBase
 {
-   private readonly BackofficeDbContext _context;
+   private readonly IRepository<Product> _repository;
 
-   public ProductsController(BackofficeDbContext context)
+   public ProductsController(IRepository<Product> repository)
    {
-      _context = context;
+      _repository = repository;
    }
 
    [HttpGet]
    public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAllProducts()
    {
-      var products = await _context.Products.Select(p => new ProductResponse
+      var products = await _repository.GetAllAsync();
+      var response = products.Select(p => new ProductResponse
       {
          Id = p.Id,
          Sku = p.Sku,
          Name = p.Name,
          Description = p.Description,
          SalesPriceExcludingVat = p.SalesPriceExcludingVat
-      }).ToListAsync();
-      return Ok(products);
+      });
+
+      return Ok(response);
    }
 
    [HttpGet("{id}")]
    public async Task<ActionResult<ProductResponse>> GetProductById(int id)
    {
-      var product = await _context.Products.Where(p => p.Id == id).Select(p => new ProductResponse
-      {
-         Id = p.Id,
-         Sku = p.Sku,
-         Name = p.Name,
-         Description = p.Description,
-         SalesPriceExcludingVat = p.SalesPriceExcludingVat
-      }).FirstOrDefaultAsync();
+      var product = await _repository.GetByIdAsync(id);
+
       if (product == null)
       {
          return NotFound();
       }
-      return Ok(product);
+
+      var response = new ProductResponse
+      {
+         Id = product.Id,
+         Sku = product.Sku,
+         Name = product.Name,
+         Description = product.Description,
+         SalesPriceExcludingVat = product.SalesPriceExcludingVat
+      };
+
+      return Ok(response);
    }
 
    [HttpPost]
    public async Task<ActionResult<ProductResponse>> CreateProduct([FromBody] CreateProductRequest request)
    {
+
       var product = new Product
       {
          Sku = request.Sku,
@@ -70,8 +77,8 @@ public class ProductsController : ControllerBase
          Height = request.Height
       };
 
-      _context.Products.Add(product);
-      await _context.SaveChangesAsync();
+      await _repository.AddAsync(product);
+      await _repository.SaveChangesAsync();
 
       var response = new ProductResponse
       {
@@ -88,7 +95,7 @@ public class ProductsController : ControllerBase
    [HttpDelete("{id}")]
    public async Task<IActionResult> DeleteProductById(int id)
    {
-      var product = await _context.Products.FindAsync(id);
+      var product = await _repository.GetByIdAsync(id);
       if (product == null)
       {
          return NotFound();
@@ -96,8 +103,8 @@ public class ProductsController : ControllerBase
 
       try
       {
-         _context.Products.Remove(product);
-         await _context.SaveChangesAsync();
+         _repository.Delete(product);
+         await _repository.SaveChangesAsync();
          return NoContent();
       }
       catch (Exception ex)
@@ -110,7 +117,7 @@ public class ProductsController : ControllerBase
    [HttpPut("{id}")]
    public async Task<IActionResult> UpdateProductById(int id, [FromBody] CreateProductRequest request)
    {
-      var product = await _context.Products.FindAsync(id);
+      var product = await _repository.GetByIdAsync(id);
 
       if (product == null)
       {
@@ -131,9 +138,8 @@ public class ProductsController : ControllerBase
       product.Length = request.Length;
       product.Height = request.Height;
 
-      await _context.SaveChangesAsync();
+      await _repository.SaveChangesAsync();
       return NoContent();
    }
-
 
 }
