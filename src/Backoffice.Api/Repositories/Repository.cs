@@ -20,4 +20,6 @@ public class Repository<T> : IRepository<T> where T : class
    public async Task AddAsync(T entity) => await _dbSet.AddAsync(entity);
    public void Delete(T entity) => _dbSet.Remove(entity);
    public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
+   public async Task<T?> FindAsync(Func<T, bool> predicate) =>
+    await Task.Run(() => _dbSet.FirstOrDefault(predicate));
 }

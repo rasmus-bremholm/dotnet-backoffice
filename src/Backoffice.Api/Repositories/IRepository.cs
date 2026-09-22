@@ -7,5 +7,5 @@ public interface IRepository<T>
    Task AddAsync(T entity);
    void Delete(T entity);
    Task SaveChangesAsync();
-
+   Task<T?> FindAsync(Func<T, bool> predicate);
 }
