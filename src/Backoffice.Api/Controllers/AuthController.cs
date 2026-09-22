@@ -31,6 +31,13 @@ public class AuthController : ControllerBase
          CreatedAt = DateTime.UtcNow
       };
 
+      var existingUser = await _repository.FindAsync(u => u.Email == request.Email);
+
+      if (existingUser != null)
+      {
+         return Conflict("A user with this email already exists.");
+      }
+
       user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
       await _repository.AddAsync(user);
