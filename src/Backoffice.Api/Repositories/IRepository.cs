@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+
 namespace Backoffice.Api.Repositories;
 
 public interface IRepository<T>
@@ -7,5 +9,5 @@ public interface IRepository<T>
    Task AddAsync(T entity);
    void Delete(T entity);
    Task SaveChangesAsync();
-   Task<T?> FindAsync(Func<T, bool> predicate);
+   Task<T?> FindAsync(Expression<Func<T, bool>> predicate);
 }

@@ -61,15 +61,31 @@ public class AuthController : ControllerBase
 
       if (user == null)
       {
-         return NotFound();
+         return Unauthorized("Invalid email or password");
       }
 
       var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-      if (result != PasswordVerificationResult.Success)
+
+      if (result == PasswordVerificationResult.SuccessRehashNeeded)
+      {
+         user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+         await _repository.SaveChangesAsync();
+      }
+      else if (result != PasswordVerificationResult.Success)
       {
          return Unauthorized("Invalid email or password");
       }
+
       HttpContext.Session.SetInt32("AdminUserId", user.Id);
-      return Ok(result);
+
+      var response = new AdminUserResponse
+      {
+         Id = user.Id,
+         Name = user.Name,
+         Email = user.Email,
+         Role = user.Role,
+
+      };
+      return Ok(response);
    }
 }

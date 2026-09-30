@@ -8,8 +8,6 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
 builder.Services.AddDbContext<BackofficeDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("BackofficeDb")));
 
@@ -21,7 +19,10 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddSingleton<IPasswordHasher<AdminUser>, PasswordHasher<AdminUser>>();
 
 builder.Services.AddControllers();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession();
 var app = builder.Build();
+app.UseSession();
 app.MapControllers();
 
 app.Run();

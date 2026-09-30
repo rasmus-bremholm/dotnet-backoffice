@@ -1,6 +1,7 @@
 
 using Backoffice.Api.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Backoffice.Api.Repositories;
 
@@ -20,6 +21,6 @@ public class Repository<T> : IRepository<T> where T : class
    public async Task AddAsync(T entity) => await _dbSet.AddAsync(entity);
    public void Delete(T entity) => _dbSet.Remove(entity);
    public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
-   public async Task<T?> FindAsync(Func<T, bool> predicate) =>
-    await Task.Run(() => _dbSet.FirstOrDefault(predicate));
+   public async Task<T?> FindAsync(Expression<Func<T, bool>> predcate) =>
+    await _dbSet.FirstOrDefaultAsync(predcate);
 }
