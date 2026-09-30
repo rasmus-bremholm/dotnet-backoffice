@@ -54,7 +54,7 @@ public class AuthController : ControllerBase
       return Ok(response);
    }
 
-   [HttpPost]
+   [HttpPost("login")]
    public async Task<ActionResult> LoginUser([FromBody] LoginRequest request)
    {
       var user = await _repository.FindAsync(u => u.Email == request.Email);
@@ -69,7 +69,7 @@ public class AuthController : ControllerBase
       {
          return Unauthorized("Invalid email or password");
       }
-
+      HttpContext.Session.SetInt32("AdminUserId", user.Id);
       return Ok(result);
    }
 }
