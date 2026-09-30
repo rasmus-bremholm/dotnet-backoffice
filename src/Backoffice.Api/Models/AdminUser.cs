@@ -1,7 +1,11 @@
 
 
+
+using Microsoft.EntityFrameworkCore;
+
 namespace Backoffice.Api.Models;
 
+[Index(nameof(Email), IsUnique = true)]
 public class AdminUser
 {
    public int Id { get; set; }

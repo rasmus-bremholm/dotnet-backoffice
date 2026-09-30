@@ -57,6 +57,7 @@ public class AuthController : ControllerBase
    [HttpPost("login")]
    public async Task<ActionResult> LoginUser([FromBody] LoginRequest request)
    {
+      // Parked idea, Index on Email, what does it mean? How does it improve.
       var user = await _repository.FindAsync(u => u.Email == request.Email);
 
       if (user == null)
@@ -86,6 +87,36 @@ public class AuthController : ControllerBase
          Role = user.Role,
 
       };
+      return Ok(response);
+   }
+
+   [HttpGet("me")]
+   public async Task<ActionResult<AdminUserResponse>> GetMe()
+   {
+      int? userId = HttpContext.Session.GetInt32("AdminUserId");
+
+      if (userId == null)
+      {
+         return Unauthorized();
+      }
+
+      var user = await _repository.FindAsync(u => u.Id == userId);
+
+      if (user == null)
+      {
+         HttpContext.Session.Clear();
+         return Unauthorized();
+      }
+
+      var response = new AdminUserResponse
+      {
+         Id = user.Id,
+         Name = user.Name,
+         Email = user.Email,
+         Role = user.Role,
+
+      };
+
       return Ok(response);
    }
 }
