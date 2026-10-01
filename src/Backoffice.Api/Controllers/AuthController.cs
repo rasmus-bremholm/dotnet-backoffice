@@ -64,10 +64,8 @@ public class AuthController : ControllerBase
       var key = $"login-attempts:{HttpContext.Connection.RemoteIpAddress?.ToString()}";
       var attempts = await db.StringIncrementAsync(key);
 
-      if (attempts == 1)
-      {
-         await db.KeyExpireAsync(key, TimeSpan.FromMinutes(15));
-      }
+      await db.KeyExpireAsync(key, TimeSpan.FromMinutes(5), ExpireWhen.HasNoExpiry);
+
 
       if (attempts > 5)
       {
@@ -78,12 +76,14 @@ public class AuthController : ControllerBase
 
       var user = await _repository.FindAsync(u => u.Email == request.Email);
 
+      // No such user
       if (user == null)
       {
          return Unauthorized("Invalid email or password");
       }
 
       var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+
 
       if (result == PasswordVerificationResult.SuccessRehashNeeded)
       {
@@ -92,9 +92,13 @@ public class AuthController : ControllerBase
       }
       else if (result != PasswordVerificationResult.Success)
       {
+         // Password is rong
          return Unauthorized("Invalid email or password");
       }
 
+      // Deletes the attempts key on sucessful login.
+      await db.KeyDeleteAsync(key);
+      // Login sucessful! Woop
       HttpContext.Session.SetInt32("AdminUserId", user.Id);
 
       var response = new AdminUserResponse
