@@ -3,6 +3,7 @@ using Backoffice.Api.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Backoffice.Api.Dtos;
 using Microsoft.AspNetCore.Identity;
+using StackExchange.Redis;
 
 namespace Backoffice.Api.Controllers;
 
@@ -13,11 +14,13 @@ public class AuthController : ControllerBase
 {
    private readonly IRepository<AdminUser> _repository;
    private readonly IPasswordHasher<AdminUser> _passwordHasher;
+   private readonly IConnectionMultiplexer _connectionMultiplexer;
 
-   public AuthController(IRepository<AdminUser> repository, IPasswordHasher<AdminUser> passwordHasher)
+   public AuthController(IRepository<AdminUser> repository, IPasswordHasher<AdminUser> passwordHasher, IConnectionMultiplexer connectionMultiplexer)
    {
       _repository = repository;
       _passwordHasher = passwordHasher;
+      _connectionMultiplexer = connectionMultiplexer;
    }
 
    [HttpPost]
@@ -57,7 +60,22 @@ public class AuthController : ControllerBase
    [HttpPost("login")]
    public async Task<ActionResult> LoginUser([FromBody] LoginRequest request)
    {
-      // Parked idea, Index on Email, what does it mean? How does it improve.
+      var db = _connectionMultiplexer.GetDatabase();
+      var key = $"login-attempts:{HttpContext.Connection.RemoteIpAddress?.ToString()}";
+      var attempts = await db.StringIncrementAsync(key);
+
+      if (attempts == 1)
+      {
+         await db.KeyExpireAsync(key, TimeSpan.FromMinutes(15));
+      }
+
+      if (attempts > 5)
+      {
+         // 429 - Too many requests
+         return StatusCode(429, "Too many login attempts. Smell you later");
+      }
+
+
       var user = await _repository.FindAsync(u => u.Email == request.Email);
 
       if (user == null)
