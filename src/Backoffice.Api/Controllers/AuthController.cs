@@ -1,10 +1,8 @@
 using Backoffice.Api.Models;
 using Backoffice.Api.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Backoffice.Api.Dtos;
 using Microsoft.AspNetCore.Identity;
-using StackExchange.Redis;
-
+using Backoffice.Api.Services;
 namespace Backoffice.Api.Controllers;
 
 [ApiController]
@@ -14,13 +12,13 @@ public class AuthController : ControllerBase
 {
    private readonly IRepository<AdminUser> _repository;
    private readonly IPasswordHasher<AdminUser> _passwordHasher;
-   private readonly IConnectionMultiplexer _connectionMultiplexer;
+   private readonly ILoginRateLimiter _loginRateLimiter;
 
-   public AuthController(IRepository<AdminUser> repository, IPasswordHasher<AdminUser> passwordHasher, IConnectionMultiplexer connectionMultiplexer)
+   public AuthController(ILoginRateLimiter loginRateLimiter, IRepository<AdminUser> repository, IPasswordHasher<AdminUser> passwordHasher)
    {
       _repository = repository;
       _passwordHasher = passwordHasher;
-      _connectionMultiplexer = connectionMultiplexer;
+      _loginRateLimiter = loginRateLimiter;
    }
 
    [HttpPost]
@@ -60,19 +58,12 @@ public class AuthController : ControllerBase
    [HttpPost("login")]
    public async Task<ActionResult> LoginUser([FromBody] LoginRequest request)
    {
-      var db = _connectionMultiplexer.GetDatabase();
-      var key = $"login-attempts:{HttpContext.Connection.RemoteIpAddress?.ToString()}";
-      var attempts = await db.StringIncrementAsync(key);
+      var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-      await db.KeyExpireAsync(key, TimeSpan.FromMinutes(5), ExpireWhen.HasNoExpiry);
-
-
-      if (attempts > 5)
+      if (!await _loginRateLimiter.TryAttemptAsync(clientIp))
       {
-         // 429 - Too many requests
          return StatusCode(429, "Too many login attempts. Smell you later");
       }
-
 
       var user = await _repository.FindAsync(u => u.Email == request.Email);
 
@@ -97,7 +88,7 @@ public class AuthController : ControllerBase
       }
 
       // Deletes the attempts key on sucessful login.
-      await db.KeyDeleteAsync(key);
+      await _loginRateLimiter.ResetAsync(clientIp);
       // Login sucessful! Woop
       HttpContext.Session.SetInt32("AdminUserId", user.Id);
 
