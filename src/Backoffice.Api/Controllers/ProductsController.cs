@@ -112,6 +112,12 @@ public class ProductsController : ControllerBase
    [HttpDelete("{id}")]
    public async Task<IActionResult> DeleteProductById(int id)
    {
+      int? userId = HttpContext.Session.GetInt32("AdminUserId");
+      if (userId == null)
+      {
+         return Unauthorized();
+      }
+
       var product = await _repository.GetByIdAsync(id);
       if (product == null)
       {
